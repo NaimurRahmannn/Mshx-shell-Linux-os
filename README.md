@@ -2,8 +2,8 @@
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="assets/logo-dark.png" />
-    <source media="(prefers-color-scheme: light)" srcset="assets/logo-light.png" />
-    <img src="assets/logo-light.png" alt="MshX Logo" width="420" />
+    <source media="(prefers-color-scheme: light)" srcset="assets/logo-white.png" />
+    <img src="assets/logo-white.png" alt="MshX Logo" width="420" />
   </picture>
 </p>
 
@@ -27,6 +27,12 @@
   <a href="#what-you-can-do">Examples</a>&nbsp;&nbsp;·&nbsp;&nbsp;
   <a href="#contributing">Contributing</a>
 </p>
+
+---
+
+**MshX** is a lightweight, dependency-free Unix command shell built entirely from scratch in C99. Designed without readline, ncurses, or any third-party libraries, MshX implements every subsystem by hand using raw POSIX system calls — featuring a complete compiler-style architecture with a lexical scanner, recursive-descent parser producing an Abstract Syntax Tree (AST), a six-phase word expansion engine, and an execution pipeline.
+
+Beyond standard POSIX capabilities like multi-stage pipelines, I/O redirection, background process management, and shunting-yard arithmetic evaluation, MshX includes developer-focused features: a **`dry` run mode** that previews execution plans with zero side effects, and an integrated **`timeline` profiler** that traces process lifecycle events with millisecond precision.
 
 ```text
 ~_~:$ ls *.c | wc -l
