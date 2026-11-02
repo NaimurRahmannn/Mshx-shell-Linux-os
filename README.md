@@ -18,11 +18,29 @@ EXEC: /usr/bin/wc -l
 
 ## Getting Started
 
+**One-liner install:**
+
+```bash
+curl -sSL https://raw.githubusercontent.com/NaimurRahmannn/Mshx-shell-Linux-os/main/install.sh | bash
+```
+
+This checks for dependencies, clones the repo, builds from source, and installs `mshx` to `~/.local/bin`.
+
+**Manual build:**
+
 ```bash
 git clone https://github.com/NaimurRahmannn/Mshx-shell-Linux-os.git
 cd Mshx-shell-Linux-os
 make
 ./mshX
+```
+
+**Install system-wide (after building):**
+
+```bash
+make install                        # installs to ~/.local/bin/mshx
+sudo make install PREFIX=/usr/local # installs to /usr/local/bin/mshx
+make uninstall                      # remove it
 ```
 
 Requires GCC (or any C99 compiler), GNU Make, and a Linux/POSIX system. Run `make clean` to remove build artifacts.

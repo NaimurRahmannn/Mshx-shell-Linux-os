@@ -53,3 +53,21 @@ $(BUILD_DIR)/%.o : %.c
 clean:
 	$(RM) $(OBJS) $(TARGET) core .depend
 	$(RM) -r $(BUILD_DIR)
+
+# install target
+PREFIX ?= $(HOME)/.local
+.PHONY: install
+install: all
+	mkdir -p $(PREFIX)/bin
+	cp $(TARGET) $(PREFIX)/bin/mshx
+	chmod +x $(PREFIX)/bin/mshx
+	@echo ""
+	@echo "  MshX installed to $(PREFIX)/bin/mshx"
+	@echo "  Make sure $(PREFIX)/bin is in your PATH."
+	@echo ""
+
+# uninstall target
+.PHONY: uninstall
+uninstall:
+	$(RM) $(PREFIX)/bin/mshx
+	@echo "  MshX uninstalled."
