@@ -1,32 +1,61 @@
-# MshX
+<!-- Logo Section — auto-switches between light and dark mode -->
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/logo-dark.png" />
+    <source media="(prefers-color-scheme: light)" srcset="assets/logo-light.png" />
+    <img src="assets/logo-light.png" alt="MshX Logo" width="420" />
+  </picture>
+</p>
 
-**MshX** is a Unix shell implemented from the ground up in C. It does not depend on readline, ncurses, or any third-party library — every component, from the tokenizer to the executor, is written by hand using only POSIX system calls.
+<p align="center">
+  <strong>A dependency-free Unix shell built entirely from scratch in C.</strong><br/>
+  <sub>Tokenizer · Parser · AST · Executor — every layer handcrafted with POSIX system calls.</sub>
+</p>
 
-The goal was simple: understand how a shell actually works by building one.
+<p align="center">
+  <a href="https://github.com/NaimurRahmannn/Mshx-shell-Linux-os/blob/main/LICENSE"><img src="https://img.shields.io/github/license/NaimurRahmannn/Mshx-shell-Linux-os?style=flat-square&color=blue" alt="License" /></a>
+  <a href="https://github.com/NaimurRahmannn/Mshx-shell-Linux-os"><img src="https://img.shields.io/github/languages/top/NaimurRahmannn/Mshx-shell-Linux-os?style=flat-square&color=orange" alt="Language" /></a>
+  <a href="https://github.com/NaimurRahmannn/Mshx-shell-Linux-os"><img src="https://img.shields.io/github/repo-size/NaimurRahmannn/Mshx-shell-Linux-os?style=flat-square" alt="Repo Size" /></a>
+  <a href="https://github.com/NaimurRahmannn/Mshx-shell-Linux-os/commits/main"><img src="https://img.shields.io/github/last-commit/NaimurRahmannn/Mshx-shell-Linux-os?style=flat-square&color=green" alt="Last Commit" /></a>
+  <a href="https://github.com/NaimurRahmannn/Mshx-shell-Linux-os/stargazers"><img src="https://img.shields.io/github/stars/NaimurRahmannn/Mshx-shell-Linux-os?style=flat-square&color=yellow" alt="Stars" /></a>
+</p>
 
-```
+<p align="center">
+  <a href="#quick-install">Install</a>&nbsp;&nbsp;·&nbsp;&nbsp;
+  <a href="#how-it-works">Architecture</a>&nbsp;&nbsp;·&nbsp;&nbsp;
+  <a href="#built-in-commands">Built-ins</a>&nbsp;&nbsp;·&nbsp;&nbsp;
+  <a href="#what-you-can-do">Examples</a>&nbsp;&nbsp;·&nbsp;&nbsp;
+  <a href="#contributing">Contributing</a>
+</p>
+
+```text
 ~_~:$ ls *.c | wc -l
 20
+
 ~_~:$ dry ls *.c | wc -l
 GLOB: *.c -> executor.c initsh.c main.c node.c parser.c pattern.c prompt.c scanner.c shunt.c source.c strings.c wordexp.c
 PIPE: ls -> wc
 EXEC: /usr/bin/ls executor.c initsh.c main.c node.c parser.c pattern.c prompt.c scanner.c shunt.c source.c strings.c wordexp.c
 EXEC: /usr/bin/wc -l
+
+~_~:$ echo "Arithmetic: $(( (15 * 4) / (2 + 1) ))"
+Arithmetic: 20
 ```
 
----
+<!-- ─────────────────────────────────────────────────────────── -->
 
-## Getting Started
+## Quick Install
 
-**One-liner install:**
+**One command. That's it.**
 
 ```bash
 curl -sSL https://raw.githubusercontent.com/NaimurRahmannn/Mshx-shell-Linux-os/main/install.sh | bash
 ```
 
-This checks for dependencies, clones the repo, builds from source, and installs `mshx` to `~/.local/bin`.
+<details>
+<summary><strong>Manual build from source</strong></summary>
 
-**Manual build:**
+<br/>
 
 ```bash
 git clone https://github.com/NaimurRahmannn/Mshx-shell-Linux-os.git
@@ -35,81 +64,119 @@ make
 ./mshX
 ```
 
-**Install system-wide (after building):**
-
+**System install:**
 ```bash
-make install                        # installs to ~/.local/bin/mshx
-sudo make install PREFIX=/usr/local # installs to /usr/local/bin/mshx
-make uninstall                      # remove it
+make install                         # → ~/.local/bin/mshx
+sudo make install PREFIX=/usr/local  # → /usr/local/bin/mshx
+make uninstall                       # remove it
 ```
 
-Requires GCC (or any C99 compiler), GNU Make, and a Linux/POSIX system. Run `make clean` to remove build artifacts.
+**Requirements:** GCC (C99), GNU Make, Linux/POSIX
+
+</details>
+
+---
+
+## Why MshX?
+
+Most "build a shell" tutorials stop at `fork` + `exec` with a `|` pipe. **MshX goes far beyond that.**
+
+<table>
+<tr>
+<td width="50%">
+
+### What's Inside
+
+- Full **lexical analyzer** that handles quotes, escapes, and 10+ operator types
+- **Recursive-descent parser** producing a proper Abstract Syntax Tree
+- **Six-stage word expansion** pipeline (tilde → vars → commands → arithmetic → field split → globs)
+- **Shunting-yard algorithm** for arithmetic with all C integer operators
+- **Scoped symbol table** with a stack-based scope chain
+
+</td>
+<td width="50%">
+
+### What Makes It Different
+
+- **`dry` command** — preview the entire execution plan with zero side effects
+- **`timeline` profiler** — trace `fork`/`exec`/`exit` events with ms timestamps
+- **Zero dependencies** — no readline, no ncurses, nothing external
+- **Dual execution engine** — same AST drives both real and dry-run modes
+- **6,800+ lines** of pure, handcrafted C
+
+</td>
+</tr>
+</table>
 
 ---
 
 ## How It Works
 
-Every command you type passes through four stages before anything happens:
+Every command passes through a **compiler-style pipeline** before anything executes:
 
+```mermaid
+flowchart LR
+    IN["User Input<br/><code>ls *.c | wc -l</code>"] --> SC["1. Scanner<br/><code>scanner.c</code>"]
+    SC -->|Tokens| PA["2. Parser<br/><code>parser.c</code>"]
+    PA -->|AST| WE["3. Word Expansion<br/><code>wordexp.c</code>"]
+    WE -->|Expanded AST| EX["4. Executor<br/><code>executor.c</code>"]
+    
+    EX --> BU["Built-in Commands<br/>In-Process"]
+    EX --> SY["External Programs<br/>fork + pipe + execv"]
+    EX --> DR["Dry Run Mode<br/>Zero Side-Effects"]
 ```
-Input  ──▶  Scanner  ──▶  Parser  ──▶  Executor
-(text)     (tokens)      (AST)       (fork/exec)
-```
 
-**Stage 1 — Scanner** (`scanner.c`): Reads the raw character stream and produces tokens. It recognizes quoted strings (`"..."`, `'...'`), escape sequences (`\`), operators (`|`, `&&`, `||`, `;`, `&`, `>`, `>>`, `<`), variable references (`$VAR`, `${...}`), and regular words. The tokenizer uses a dynamically growing buffer that starts at 1KB and doubles as needed.
+<details>
+<summary><strong>Detailed stage breakdown</strong></summary>
 
-**Stage 2 — Parser** (`parser.c`): Takes the token stream and builds an Abstract Syntax Tree. Each simple command becomes a `NODE_COMMAND` node whose children are `NODE_VAR` nodes — one per word/argument. The parser stops at operator boundaries and hands control back to the main loop, which handles pipelines, logical operators, and sequences.
+<br/>
 
-**Stage 3 — Word Expansion** (`wordexp.c`, 1800+ lines): Before execution, every word goes through a six-step expansion pipeline:
+### Stage 1 — Scanner (`scanner.c`)
 
-1. **Tilde expansion** — `~` becomes `$HOME`, `~user` resolves via `getpwnam()`
-2. **Variable expansion** — `$VAR`, `${var:-default}`, `${var:=value}`, `${var:+alt}`, `${var:?error}`, `${#var}`, prefix/suffix stripping (`##`, `%%`)
-3. **Command substitution** — `` `command` `` runs the command and captures its output
-4. **Arithmetic expansion** — `$((2 + 3 * 4))` evaluated via a shunting-yard algorithm (`shunt.c`, 1300+ lines) supporting all C integer operators including ternary `?:`
-5. **Field splitting** — results are split on `$IFS` boundaries
-6. **Pathname expansion** — glob patterns (`*`, `?`, `[...]`) are matched against the filesystem using POSIX `glob()`
+Reads the raw character stream and produces tokens. Handles:
+- Quoted strings (`"..."`, `'...'`, `` `...` ``)
+- Escape sequences (`\`)
+- All operators: `|`, `||`, `&&`, `;`, `&`, `>`, `>>`, `<`
+- Variable references (`$VAR`, `${...}`, `$(...)`)
+- Dynamic buffer that starts at 1KB and doubles as needed
 
-**Stage 4 — Executor** (`executor.c`): Dispatches commands. Built-in commands run in the shell process. External commands are executed via `fork()` + `execv()`. Pipelines are wired with `pipe()` + `dup2()`. I/O redirection opens files with appropriate flags (`O_TRUNC` for `>`, `O_APPEND` for `>>`). Background jobs are isolated with `setpgid(0, 0)`.
+### Stage 2 — Parser (`parser.c`)
+
+Recursive-descent parser that builds an AST. Each command becomes a `NODE_COMMAND` node with `NODE_VAR` children for each argument. The parser stops at operator boundaries and returns control to the main loop for pipeline/logical operator handling.
+
+### Stage 3 — Word Expansion (`wordexp.c` — 1,800+ lines)
+
+Every word goes through six expansion phases in order:
+
+| Phase | Example | Result |
+|---|---|---|
+| **Tilde** | `~/docs` | `/home/user/docs` |
+| **Variable** | `${HOME:-/tmp}` | `/home/user` |
+| **Command** | `` `whoami` `` | `user` |
+| **Arithmetic** | `$((2+3*4))` | `14` |
+| **Field Split** | (split on `$IFS`) | separate words |
+| **Pathname** | `*.c` | `main.c parser.c ...` |
+
+### Stage 4 — Executor (`executor.c`)
+
+Dispatches commands through two paths:
+- **Built-ins** → run in the shell process (no fork)
+- **External** → `fork()` + `execv()` with pipeline wiring via `pipe()` + `dup2()`
+
+A single `enum exec_mode` flag switches the entire executor between **real** and **dry-run** modes — same AST, different behavior.
+
+</details>
 
 ---
 
 ## Built-in Commands
 
-MshX includes five built-in commands. They execute inside the shell process — no `fork()` required.
+<details open>
+<summary><strong><code>dry</code></strong> — Zero-side-effect execution preview</summary>
 
-### cd
+<br/>
 
-```bash
-cd              # go to $HOME
-cd /tmp         # go to /tmp
-cd -            # go back to previous directory
-```
-
-Tracks `PWD` and `OLDPWD` in the symbol table, so `cd -` always works.
-
-### history
-
-Commands are stored in a circular buffer that holds up to 1,000 entries. Consecutive duplicates are automatically filtered out.
-
-```bash
-history         # show all entries with line numbers
-history 20      # show the last 20
-history -c      # clear everything
-```
-
-History expansion happens inline before the command is parsed:
-
-```bash
-!!              # repeat the last command
-!5              # repeat command #5
-!-2             # repeat the command from 2 entries ago
-```
-
-### dry
-
-This is the command that makes MshX different from most educational shells. `dry` runs the entire parsing and expansion pipeline — tilde expansion, variable substitution, glob matching, path resolution — but stops right before any system call that would have side effects.
-
-No `fork()`. No `exec()`. No files created. No pipes opened.
+The flagship feature. Runs the *entire* parsing and expansion pipeline — but stops before any system call with side effects. No `fork()`, no `exec()`, no file I/O.
 
 ```bash
 ~_~:$ dry cat input.txt > output.txt
@@ -122,44 +189,23 @@ REDIRECT: stdout -> output.txt
 PIPE: echo -> sort
 PIPE: sort -> head
 GLOB: *.c -> executor.c initsh.c main.c node.c parser.c ...
-EXEC: /usr/bin/echo executor.c initsh.c main.c node.c parser.c ...
+EXEC: /usr/bin/echo executor.c initsh.c main.c ...
 EXEC: /usr/bin/sort
 EXEC: /usr/bin/head -5
 ```
 
-```bash
-~_~:$ dry sleep 300 &
-BACKGROUND:
-EXEC: /usr/bin/sleep 300
-```
+</details>
 
-This works because `dry` simply flips a global `enum exec_mode` flag from `EXEC_REAL` to `EXEC_DRY`. The same tokenizer, parser, and AST are used — the executor just prints what it *would* do instead of doing it.
+<details>
+<summary><strong><code>timeline</code></strong> — Process lifecycle profiler</summary>
 
-### dump
+<br/>
 
-Prints every variable in the current symbol table scope — all inherited environment variables plus any shell-defined ones.
-
-```bash
-~_~:$ dump
-Symbol table [Level 0]:
-===========================
-  No               Symbol                    Val
------- -------------------------------- ------------
-[0000] HOME                             '/home/user'
-[0001] PATH                             '/usr/local/bin:/usr/bin:/bin'
-[0002] PS1                              '$ '
-[0003] PS2                              '> '
-...
-```
-
-### timeline
-
-Prefix any command with `timeline` to trace its process lifecycle with millisecond timestamps.
+Prefix any command with `timeline` to trace kernel-level events with millisecond precision:
 
 ```bash
 ~_~:$ timeline ls | grep .c
 executor.c
-initsh.c
 main.c
 ...
 
@@ -174,108 +220,201 @@ PID    EVENT                TIME(ms)
 18202  exited(0)            1
 ```
 
-Events tracked: `forked`, `execve`, `exited(code)`, `signaled(sig)`, `stopped(sig)`, `continued`, `piped(A→B)`, `redirected(>file)`.
+**Tracked events:** `forked` · `execve` · `exited(code)` · `signaled(sig)` · `stopped(sig)` · `continued` · `piped(A→B)` · `redirected(>file)`
 
-Internally, `timeline` uses `clock_gettime(CLOCK_MONOTONIC)` for timing and stores up to 256 events in a pre-allocated array, sorted chronologically with `qsort()` before display.
+Uses `clock_gettime(CLOCK_MONOTONIC)` for timing and stores up to 256 events.
+
+</details>
+
+<details>
+<summary><strong><code>history</code></strong> — Command history with expansion</summary>
+
+<br/>
+
+1,000-entry circular buffer with automatic deduplication of consecutive identical commands.
+
+```bash
+history         # show all entries
+history 20      # show last 20
+history -c      # clear everything
+```
+
+**Inline expansion** — works anywhere in your command:
+
+```bash
+!!              # repeat last command
+!5              # repeat command #5
+!-2             # repeat 2 commands ago
+```
+
+</details>
+
+<details>
+<summary><strong><code>cd</code></strong> — Directory navigation</summary>
+
+<br/>
+
+```bash
+cd              # → $HOME
+cd /tmp         # → /tmp
+cd -            # → previous directory ($OLDPWD)
+```
+
+Automatically tracks `PWD` and `OLDPWD` in the symbol table.
+
+</details>
+
+<details>
+<summary><strong><code>dump</code></strong> — Symbol table inspector</summary>
+
+<br/>
+
+Print every variable in the current scope:
+
+```bash
+~_~:$ dump
+Symbol table [Level 0]:
+===========================
+  No               Symbol                    Val
+------ -------------------------------- ------------
+[0000] HOME                             '/home/user'
+[0001] PATH                             '/usr/local/bin:/usr/bin:/bin'
+[0002] PS1                              '$ '
+...
+```
+
+</details>
 
 ---
 
 ## What You Can Do
 
-**Pipes** — chain up to 64 commands:
 ```bash
+# Pipelines — up to 64 stages
 cat /var/log/syslog | grep error | sort | uniq -c | sort -rn | head
-```
 
-**I/O redirection:**
-```bash
+# I/O Redirection
 sort < input.txt > sorted.txt
 echo "appended" >> log.txt
-```
 
-**Logical operators:**
-```bash
-mkdir build && cd build             # short-circuit AND
-gcc main.c || echo "failed"         # short-circuit OR
-```
+# Logical operators (short-circuit)
+mkdir build && cd build
+gcc main.c || echo "failed"
 
-**Command sequences:**
-```bash
-echo one ; echo two ; echo three
-```
-
-**Background jobs:**
-```bash
+# Background jobs
 find / -name "*.log" > results.txt &
-```
 
-**Variable expansion:**
-```bash
-echo $HOME $PATH $? $$
+# Variables & parameter expansion
+echo $HOME $? $$
 echo ${HOME:-/tmp}
 echo ${#PATH}
-```
 
-**Arithmetic:**
-```bash
+# Arithmetic
 echo $((10 + 20 * 3))
 echo $(( (5 > 3) ? 100 : 0 ))
-```
 
-**Globbing:**
-```bash
+# Globbing
 ls *.c
 cat [Mm]akefile
-```
 
-**Multi-line input:**
-```bash
-echo "this continues \
+# Command sequences
+echo one ; echo two ; echo three
+
+# Multi-line
+echo "continues \
 on the next line"
 ```
-
----
-
-## Signal Handling
-
-The shell itself ignores `SIGINT` (Ctrl+C) and `SIGTSTP` (Ctrl+Z) — you won't accidentally kill your session. But every child process gets default signal handlers restored via `signal(SIGINT, SIG_DFL)` right after `fork()`, so Ctrl+C correctly terminates running commands.
-
-`SIGTTOU` is ignored globally to prevent the shell from stopping when a background job tries to write to the terminal.
 
 ---
 
 ## Project Structure
 
 ```
-├── main.c           REPL loop — read, expand history, parse, execute
-├── scanner.c        Tokenizer (handles quotes, escapes, all operators)
-├── parser.c         Recursive-descent parser → AST
-├── node.c           AST node creation and memory management
-├── executor.c       fork/exec/pipe/redirect/background execution
-├── wordexp.c        Six-stage word expansion pipeline
-├── shunt.c          Shunting-yard arithmetic evaluator
-├── pattern.c        Glob pattern matching via fnmatch()
-├── source.c         Character-stream abstraction (next, peek, unget)
-├── prompt.c         Prompt rendering with ~ substitution
-├── initsh.c         Environment import, signal setup, history init
-├── strings.c        Buffer management and string utilities
+MshX/
+│
+├── main.c              REPL loop — read, expand history, parse, execute
+├── scanner.c           Lexical analyzer (quotes, escapes, 10+ operators)
+├── parser.c            Recursive-descent parser → AST
+├── node.c              AST node creation and memory management
+├── executor.c          fork/exec/pipe/redirect/background engine
+├── wordexp.c           Six-stage word expansion pipeline (1,800+ lines)
+├── shunt.c             Shunting-yard arithmetic evaluator (1,300+ lines)
+├── pattern.c           Glob pattern matching via fnmatch()
+├── source.c            Character-stream abstraction (next/peek/unget)
+├── prompt.c            Prompt rendering with ~ substitution
+├── initsh.c            Environment import & signal setup
+├── strings.c           Buffer management & string utilities
+│
 ├── builtins/
-│   ├── builtins.c   Dispatch table for built-in commands
-│   ├── cd.c         cd with OLDPWD tracking
-│   ├── dry.c        Dry-run execution mode
-│   ├── dump.c       Symbol table inspector
-│   ├── history.c    Circular buffer history with expansion
-│   └── timeline.c   Process lifecycle profiler
-└── symtab/
-    └── symtab.c     Linked-list symbol table with scope stack
+│   ├── builtins.c      Dispatch table for built-in commands
+│   ├── cd.c            cd with OLDPWD tracking
+│   ├── dry.c           Dry-run execution mode
+│   ├── dump.c          Symbol table inspector
+│   ├── history.c       Circular buffer history with expansion
+│   └── timeline.c      Process lifecycle profiler
+│
+├── symtab/
+│   └── symtab.c        Scoped linked-list symbol table with stack
+│
+├── assets/             Logo images
+├── install.sh          One-liner installer script
+├── Makefile            Build system with install/uninstall targets
+└── LICENSE             MIT License
 ```
 
-20 source files. ~6,800 lines of C. Zero external dependencies.
+<p align="center">
+  <strong>20 source files&nbsp;&nbsp;·&nbsp;&nbsp;6,800+ lines of C&nbsp;&nbsp;·&nbsp;&nbsp;Zero external dependencies</strong>
+</p>
+
+---
+
+## Signal Handling
+
+| Signal | Shell Behavior | Child Behavior |
+|---|---|---|
+| `SIGINT` (Ctrl+C) | Ignored — prints a newline | Default — terminates the process |
+| `SIGTSTP` (Ctrl+Z) | Ignored | Default — suspends the process |
+| `SIGTTOU` | Ignored globally | Inherited |
+
+Child processes get default handlers restored via `signal(SIG*, SIG_DFL)` immediately after `fork()`. Background jobs are isolated with `setpgid(0, 0)`.
+
+---
+
+## Contributing
+
+Contributions are welcome. Here's how:
+
+```bash
+# 1. Fork & clone
+git clone https://github.com/<your-username>/Mshx-shell-Linux-os.git
+cd Mshx-shell-Linux-os
+
+# 2. Create a branch
+git checkout -b feature/my-feature
+
+# 3. Make changes & test
+make clean && make
+./mshX
+
+# 4. Commit & push
+git commit -m "feat: add my feature"
+git push origin feature/my-feature
+
+# 5. Open a Pull Request
+```
+
+Please ensure your code compiles cleanly with `-Wall -Wextra`.
 
 ---
 
 ## License
 
-MIT — see [LICENSE](LICENSE) for details.
+MIT License — see [LICENSE](LICENSE) for the full text.
 
 Copyright © 2026 [NaimurRahmannn](https://github.com/NaimurRahmannn)
+
+---
+
+<p align="center">
+  <sub>If you find this project useful or interesting, consider starring the repository.</sub>
+</p>
